@@ -24,7 +24,7 @@ COINGECKO_API_URL = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,e
 def fetch_prices():
     for _ in range(5):  # Retry up to 5 times
         try:
-            response = requests.get(COINGECKO_API_URL, timeout=20)
+            response = requests.get(COINGECKO_API_URL, timeout=10)
             response.raise_for_status()
             data = response.json()
             btc_price = data['bitcoin']['usd']
@@ -39,14 +39,29 @@ def fetch_prices():
             grt_change = data['the-graph']['usd_24h_change']
             dot_price = data['polkadot']['usd']
             dot_change = data['polkadot']['usd_24h_change']
-            return btc_price, btc_change, eth_price, eth_change, fet_price, fet_change, fil_price, fil_change, grt_price, grt_change, dot_price, dot_change
+            return [
+                ('BTC', btc_price, btc_change),
+                ('ETH', eth_price, eth_change),
+                ('FET', fet_price, fet_change),
+                ('FIL', fil_price, fil_change),
+                ('GRT', grt_price, grt_change),
+                ('DOT', dot_price, dot_change)
+            ]
         except requests.RequestException as e:
             logging.error(f"Error fetching data: {e}")
-            time.sleep(10)  # Wait 10 seconds before retrying
-    return None, None, None, None, None, None, None, None, None, None, None, None
+            time.sleep(20)  # Wait 20 seconds before retrying
+    return []
+
+# Draw the progress wheel
+def draw_progress_wheel(draw, x, y, minute):
+    for i in range(10):
+        angle_start = i * 36
+        angle_end = angle_start + 36
+        color = 0 if i < minute else 255
+        draw.pieslice([(x-10, y-10), (x+10, y+10)], start=angle_start, end=angle_end, fill=color, outline=0)
 
 # Update e-ink display with prices and changes
-def update_display(epd, prices_changes):
+def update_display(epd, prices_changes, minute):
     font24 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 24)
     font18 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 18)
     Himage = Image.new('1', (epd.width, epd.height), 255)  # 255: clear the frame
@@ -71,8 +86,11 @@ def update_display(epd, prices_changes):
     labels = ['BTC', 'ETH', 'FET', 'FIL', 'GRT', 'DOT']
     y_positions = [40, 70, 100, 130, 160, 190]
 
-    for i, (label, (price, change)) in enumerate(zip(labels, prices_changes)):
+    for i, (label, price, change) in enumerate(prices_changes):
         draw_price_change(10, y_positions[i], label, price, change)
+
+    # Draw progress wheel
+    draw_progress_wheel(draw, epd.width - 20, epd.height - 20, minute)
 
     epd.display(epd.getbuffer(Himage))
 
@@ -86,11 +104,15 @@ def main():
     epd.Clear()
 
     try:
+        prices_changes = fetch_prices()
+        for minute in range(10):
+            update_display(epd, prices_changes, minute)
+            time.sleep(60)  # Update every 1 minute
         while True:
             prices_changes = fetch_prices()
-            if all(price is not None for price in prices_changes):
-                update_display(epd, list(zip(*[iter(prices_changes)]*2)))
-            time.sleep(600)  # Update every 10 minutes
+            for minute in range(10):
+                update_display(epd, prices_changes, minute)
+                time.sleep(60)  # Update every 1 minute
 
     except KeyboardInterrupt:
         logging.info("ctrl + c:")
