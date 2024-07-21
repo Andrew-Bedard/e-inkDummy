@@ -6,13 +6,14 @@ import logging
 import time
 import requests
 from PIL import Image, ImageDraw, ImageFont
-from waveshare_epd import epd4in2
 
 # Set up paths
 base_dir = os.path.dirname(os.path.realpath(__file__))
 picdir = os.path.join(base_dir, 'pic')
 libdir = os.path.join(base_dir, 'lib')
 sys.path.append(libdir)
+
+from waveshare_epd import epd4in2
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -38,9 +39,9 @@ def update_display(epd, btc_price, eth_price):
     Himage = Image.new('1', (epd.width, epd.height), 255)  # 255: clear the frame
     draw = ImageDraw.Draw(Himage)
     
-    draw.text((10, 10), 'Bitcoin (BTC):', font=font24, fill=0)
+    draw.text((10, 10), 'BTC:', font=font24, fill=0)
     draw.text((10, 40), f'${btc_price:.2f}', font=font24, fill=0)
-    draw.text((10, 80), 'Ethereum (ETH):', font=font24, fill=0)
+    draw.text((10, 80), 'ETH:', font=font24, fill=0)
     draw.text((10, 110), f'${eth_price:.2f}', font=font24, fill=0)
 
     epd.display(epd.getbuffer(Himage))
@@ -59,7 +60,7 @@ def main():
             btc_price, eth_price = fetch_prices()
             if btc_price is not None and eth_price is not None:
                 update_display(epd, btc_price, eth_price)
-            time.sleep(60)  # Update every 1 minute
+            time.sleep(60*5)  # Update every 1 minute
 
     except KeyboardInterrupt:
         logging.info("ctrl + c:")
