@@ -38,8 +38,13 @@ def fetch_prices():
 # Update e-ink display with prices and changes
 def update_display(epd, btc_price, btc_change, eth_price, eth_change):
     font24 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 24)
+    font18 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 18)
     Himage = Image.new('1', (epd.width, epd.height), 255)  # 255: clear the frame
     draw = ImageDraw.Draw(Himage)
+
+    # Draw header
+    draw.text((10, 0), 'Asset/Price', font=font24, fill=0)
+    draw.text((210, 0), '24hr Change', font=font24, fill=0)
 
     # Helper function to draw price and change with arrow
     def draw_price_change(x, y, label, price, change):
@@ -48,13 +53,13 @@ def update_display(epd, btc_price, btc_change, eth_price, eth_change):
         arrow = '↑' if change > 0 else '↓'
         change_x = x + 200
         change_color = 0 if change > 0 else 0
-        draw.text((change_x, y), f'{arrow} {change_text}', font=font24, fill=change_color)
+        draw.text((change_x, y), f'{arrow} {change_text}', font=font18, fill=change_color)
 
     # Draw BTC price and change
-    draw_price_change(10, 10, 'BTC', btc_price, btc_change)
+    draw_price_change(10, 30, 'BTC', btc_price, btc_change)
 
     # Draw ETH price and change
-    draw_price_change(10, 50, 'ETH', eth_price, eth_change)
+    draw_price_change(10, 70, 'ETH', eth_price, eth_change)
 
     epd.display(epd.getbuffer(Himage))
 
@@ -72,7 +77,7 @@ def main():
             btc_price, btc_change, eth_price, eth_change = fetch_prices()
             if btc_price is not None and eth_price is not None:
                 update_display(epd, btc_price, btc_change, eth_price, eth_change)
-            time.sleep(60)  # Update every 1 minute
+            time.sleep(600)  # Update every 1 minute
 
     except KeyboardInterrupt:
         logging.info("ctrl + c:")
