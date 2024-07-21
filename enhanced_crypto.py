@@ -30,7 +30,7 @@ def fetch_prices():
             btc_price = data['bitcoin']['usd']
             btc_change = data['bitcoin']['usd_24h_change']
             eth_price = data['ethereum']['usd']
-            eth_change = data['ethereum']['usd']
+            eth_change = data['ethereum']['usd_24h_change']
             fet_price = data['fetch-ai']['usd']
             fet_change = data['fetch-ai']['usd_24h_change']
             fil_price = data['filecoin']['usd']
