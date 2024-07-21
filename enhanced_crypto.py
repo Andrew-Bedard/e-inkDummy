@@ -20,28 +20,30 @@ logging.basicConfig(level=logging.DEBUG)
 # API URL
 COINGECKO_API_URL = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,fetch-ai,filecoin,the-graph,polkadot&vs_currencies=usd&include_24hr_change=true'
 
-# Fetch cryptocurrency prices
+# Fetch cryptocurrency prices with retry mechanism
 def fetch_prices():
-    try:
-        response = requests.get(COINGECKO_API_URL)
-        response.raise_for_status()
-        data = response.json()
-        btc_price = data['bitcoin']['usd']
-        btc_change = data['bitcoin']['usd_24h_change']
-        eth_price = data['ethereum']['usd']
-        eth_change = data['ethereum']['usd_24h_change']
-        fet_price = data['fetch-ai']['usd']
-        fet_change = data['fetch-ai']['usd_24h_change']
-        fil_price = data['filecoin']['usd']
-        fil_change = data['filecoin']['usd_24h_change']
-        grt_price = data['the-graph']['usd']
-        grt_change = data['the-graph']['usd_24h_change']
-        dot_price = data['polkadot']['usd']
-        dot_change = data['polkadot']['usd_24h_change']
-        return btc_price, btc_change, eth_price, eth_change, fet_price, fet_change, fil_price, fil_change, grt_price, grt_change, dot_price, dot_change
-    except requests.RequestException as e:
-        logging.error(f"Error fetching data: {e}")
-        return None, None, None, None, None, None, None, None, None, None, None, None
+    for _ in range(5):  # Retry up to 5 times
+        try:
+            response = requests.get(COINGECKO_API_URL, timeout=20)
+            response.raise_for_status()
+            data = response.json()
+            btc_price = data['bitcoin']['usd']
+            btc_change = data['bitcoin']['usd_24h_change']
+            eth_price = data['ethereum']['usd']
+            eth_change = data['ethereum']['usd']
+            fet_price = data['fetch-ai']['usd']
+            fet_change = data['fetch-ai']['usd_24h_change']
+            fil_price = data['filecoin']['usd']
+            fil_change = data['filecoin']['usd_24h_change']
+            grt_price = data['the-graph']['usd']
+            grt_change = data['the-graph']['usd_24h_change']
+            dot_price = data['polkadot']['usd']
+            dot_change = data['polkadot']['usd_24h_change']
+            return btc_price, btc_change, eth_price, eth_change, fet_price, fet_change, fil_price, fil_change, grt_price, grt_change, dot_price, dot_change
+        except requests.RequestException as e:
+            logging.error(f"Error fetching data: {e}")
+            time.sleep(10)  # Wait 10 seconds before retrying
+    return None, None, None, None, None, None, None, None, None, None, None, None
 
 # Update e-ink display with prices and changes
 def update_display(epd, prices_changes):
