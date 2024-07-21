@@ -54,17 +54,20 @@ def update_display(epd, prices_changes):
     draw.text((10, 0), 'Asset/Price', font=font24, fill=0)
     draw.text((210, 0), '24hr Change', font=font24, fill=0)
 
-    # Helper function to draw price and change with arrow
+    # Draw horizontal line
+    draw.line((10, 30, epd.width - 10, 30), fill=0)
+
+    # Helper function to draw price and change with delta symbol
     def draw_price_change(x, y, label, price, change):
         draw.text((x, y), f'{label}: ${price:.2f}', font=font24, fill=0)
         change_text = f'{change:.2f}%'
-        arrow = '↑' if change > 0 else '↓'
+        delta = 'Δ' if change > 0 else '∇'
         change_x = x + 200
         change_color = 0 if change > 0 else 0
-        draw.text((change_x, y), f'{arrow} {change_text}', font=font18, fill=change_color)
+        draw.text((change_x, y), f'{delta} {change_text}', font=font18, fill=change_color)
 
     labels = ['BTC', 'ETH', 'FET', 'FIL', 'GRT', 'DOT']
-    y_positions = [30, 60, 90, 120, 150, 180]
+    y_positions = [40, 70, 100, 130, 160, 190]
 
     for i, (label, (price, change)) in enumerate(zip(labels, prices_changes)):
         draw_price_change(10, y_positions[i], label, price, change)
@@ -85,7 +88,7 @@ def main():
             prices_changes = fetch_prices()
             if all(price is not None for price in prices_changes):
                 update_display(epd, list(zip(*[iter(prices_changes)]*2)))
-            time.sleep(60)  # Update every 1 minute
+            time.sleep(600)  # Update every 10 minutes
 
     except KeyboardInterrupt:
         logging.info("ctrl + c:")
