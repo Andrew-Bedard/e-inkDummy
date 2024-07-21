@@ -1,0 +1,15 @@
+[Unit]
+Description=Run Crypto Prices Script at Startup
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /home/pi/projects/epaper/crypto_prices_with_change.py
+WorkingDirectory=/home/pi/projects/epaper
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=pi
+ExecStartPre=/bin/sleep 60  # Delay start by 60 seconds
+
+[Install]
+WantedBy=multi-user.target
