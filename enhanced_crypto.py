@@ -18,7 +18,7 @@ from waveshare_epd import epd4in2
 logging.basicConfig(level=logging.DEBUG)
 
 # API URL
-COINGECKO_API_URL = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true'
+COINGECKO_API_URL = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,fetch-ai,filecoin,the-graph,polkadot&vs_currencies=usd&include_24hr_change=true'
 
 # Fetch cryptocurrency prices
 def fetch_prices():
@@ -30,13 +30,21 @@ def fetch_prices():
         btc_change = data['bitcoin']['usd_24h_change']
         eth_price = data['ethereum']['usd']
         eth_change = data['ethereum']['usd_24h_change']
-        return btc_price, btc_change, eth_price, eth_change
+        fet_price = data['fetch-ai']['usd']
+        fet_change = data['fetch-ai']['usd_24h_change']
+        fil_price = data['filecoin']['usd']
+        fil_change = data['filecoin']['usd_24h_change']
+        grt_price = data['the-graph']['usd']
+        grt_change = data['the-graph']['usd_24h_change']
+        dot_price = data['polkadot']['usd']
+        dot_change = data['polkadot']['usd_24h_change']
+        return btc_price, btc_change, eth_price, eth_change, fet_price, fet_change, fil_price, fil_change, grt_price, grt_change, dot_price, dot_change
     except requests.RequestException as e:
         logging.error(f"Error fetching data: {e}")
-        return None, None, None, None
+        return None, None, None, None, None, None, None, None, None, None, None, None
 
 # Update e-ink display with prices and changes
-def update_display(epd, btc_price, btc_change, eth_price, eth_change):
+def update_display(epd, prices_changes):
     font24 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 24)
     font18 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 18)
     Himage = Image.new('1', (epd.width, epd.height), 255)  # 255: clear the frame
@@ -55,17 +63,17 @@ def update_display(epd, btc_price, btc_change, eth_price, eth_change):
         change_color = 0 if change > 0 else 0
         draw.text((change_x, y), f'{arrow} {change_text}', font=font18, fill=change_color)
 
-    # Draw BTC price and change
-    draw_price_change(10, 30, 'BTC', btc_price, btc_change)
+    labels = ['BTC', 'ETH', 'FET', 'FIL', 'GRT', 'DOT']
+    y_positions = [30, 60, 90, 120, 150, 180]
 
-    # Draw ETH price and change
-    draw_price_change(10, 70, 'ETH', eth_price, eth_change)
+    for i, (label, (price, change)) in enumerate(zip(labels, prices_changes)):
+        draw_price_change(10, y_positions[i], label, price, change)
 
     epd.display(epd.getbuffer(Himage))
 
 # Main function
 def main():
-    logging.info("epd4in2 Bitcoin and Ethereum Prices with 24h Change")
+    logging.info("epd4in2 Crypto Prices with 24h Change")
 
     epd = epd4in2.EPD()
     logging.info("init and Clear")
@@ -74,10 +82,10 @@ def main():
 
     try:
         while True:
-            btc_price, btc_change, eth_price, eth_change = fetch_prices()
-            if btc_price is not None and eth_price is not None:
-                update_display(epd, btc_price, btc_change, eth_price, eth_change)
-            time.sleep(600)  # Update every 1 minute
+            prices_changes = fetch_prices()
+            if all(price is not None for price in prices_changes):
+                update_display(epd, list(zip(*[iter(prices_changes)]*2)))
+            time.sleep(60)  # Update every 1 minute
 
     except KeyboardInterrupt:
         logging.info("ctrl + c:")
