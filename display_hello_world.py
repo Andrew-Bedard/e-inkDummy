@@ -3,15 +3,16 @@
 import sys
 import os
 import logging
-from waveshare_epd import epd4in2
-import time
 from PIL import Image, ImageDraw, ImageFont
+import time
 
 # Set up paths
-picdir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'pic')
-libdir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'lib')
-if os.path.exists(libdir):
-    sys.path.append(libdir)
+base_dir = os.path.dirname(os.path.realpath(__file__))
+picdir = os.path.join(base_dir, 'pic')
+libdir = os.path.join(base_dir, 'lib')
+sys.path.append(libdir)
+
+from waveshare_epd import epd4in2
 
 logging.basicConfig(level=logging.DEBUG)
 
