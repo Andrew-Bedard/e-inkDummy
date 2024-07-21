@@ -19,6 +19,7 @@ spi.open(SPI_CHANNEL, SPI_DEVICE)
 spi.max_speed_hz = 2000000
 
 # Initialize GPIO
+GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(RST_PIN, GPIO.OUT)
 GPIO.setup(DC_PIN, GPIO.OUT)
