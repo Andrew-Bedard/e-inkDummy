@@ -107,7 +107,7 @@ def main():
             btc_price, eth_price = fetch_prices()
             if btc_price is not None and eth_price is not None:
                 update_display(epd, btc_price, eth_price)
-            time.sleep(60)  # Update every 1 minute
+            time.sleep(600)  # Update every 10 minute
 
     except KeyboardInterrupt:
         logging.info("ctrl + c:")
