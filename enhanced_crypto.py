@@ -39,14 +39,29 @@ def fetch_prices():
             grt_change = data['the-graph']['usd_24h_change']
             dot_price = data['polkadot']['usd']
             dot_change = data['polkadot']['usd_24h_change']
-            return btc_price, btc_change, eth_price, eth_change, fet_price, fet_change, fil_price, fil_change, grt_price, grt_change, dot_price, dot_change
+            return [
+                ('BTC', btc_price, btc_change),
+                ('ETH', eth_price, eth_change),
+                ('FET', fet_price, fet_change),
+                ('FIL', fil_price, fil_change),
+                ('GRT', grt_price, grt_change),
+                ('DOT', dot_price, dot_change)
+            ]
         except requests.RequestException as e:
             logging.error(f"Error fetching data: {e}")
             time.sleep(10)  # Wait 10 seconds before retrying
-    return None, None, None, None, None, None, None, None, None, None, None, None
+    return []
+
+# Draw the progress wheel
+def draw_progress_wheel(draw, x, y, minute):
+    for i in range(10):
+        angle_start = i * 36
+        angle_end = angle_start + 36
+        color = 0 if i < minute else 255
+        draw.pieslice([(x-10, y-10), (x+10, y+10)], start=angle_start, end=angle_end, fill=color)
 
 # Update e-ink display with prices and changes
-def update_display(epd, prices_changes):
+def update_display(epd, prices_changes, minute):
     font24 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 24)
     font18 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 18)
     Himage = Image.new('1', (epd.width, epd.height), 255)  # 255: clear the frame
@@ -60,19 +75,25 @@ def update_display(epd, prices_changes):
     draw.line((10, 30, epd.width - 10, 30), fill=0)
 
     # Helper function to draw price and change with delta symbol
+    max_label_width = max(draw.textsize(label, font=font24)[0] for label, _, _ in prices_changes)
     def draw_price_change(x, y, label, price, change):
-        draw.text((x, y), f'{label}: ${price:.2f}', font=font24, fill=0)
+        label_text = f'{label}:'
+        label_x = x + max_label_width - draw.textsize(label_text, font=font24)[0]
+        draw.text((label_x, y), label_text, font=font24, fill=0)
+        draw.text((label_x + max_label_width + 5, y), f'${price:.2f}', font=font24, fill=0)
         change_text = f'{change:.2f}%'
         delta = 'Δ' if change > 0 else '∇'
-        change_x = x + 200
+        change_x = label_x + max_label_width + 130
         change_color = 0 if change > 0 else 0
         draw.text((change_x, y), f'{delta} {change_text}', font=font18, fill=change_color)
 
-    labels = ['BTC', 'ETH', 'FET', 'FIL', 'GRT', 'DOT']
     y_positions = [40, 70, 100, 130, 160, 190]
 
-    for i, (label, (price, change)) in enumerate(zip(labels, prices_changes)):
+    for i, (label, price, change) in enumerate(prices_changes):
         draw_price_change(10, y_positions[i], label, price, change)
+
+    # Draw progress wheel
+    draw_progress_wheel(draw, epd.width - 20, epd.height - 20, minute)
 
     epd.display(epd.getbuffer(Himage))
 
@@ -87,10 +108,11 @@ def main():
 
     try:
         while True:
-            prices_changes = fetch_prices()
-            if all(price is not None for price in prices_changes):
-                update_display(epd, list(zip(*[iter(prices_changes)]*2)))
-            time.sleep(600)  # Update every 10 minutes
+            for minute in range(10):
+                prices_changes = fetch_prices()
+                if prices_changes:
+                    update_display(epd, prices_changes, minute)
+                time.sleep(60)  # Update every 1 minute
 
     except KeyboardInterrupt:
         logging.info("ctrl + c:")
